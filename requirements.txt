@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+sqlmodel
+psycopg2-binary
+geoalchemy2
+shapely
+python_dotenv
+homeharvest
+apscheduler
