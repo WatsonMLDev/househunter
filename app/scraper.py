@@ -3,6 +3,8 @@ from typing import List
 import pandas as pd
 from homeharvest import scrape_property
 from sqlmodel import Session
+import time
+import random
 
 from app.database import engine
 from app.zillow_scraper import ZillowScraper
@@ -70,6 +72,10 @@ def scrape_and_store_properties(locations: list[str], listing_type: list[str] = 
             with Session(engine) as session:
                 count_loc_new = 0
                 count_loc_updated = 0
+                
+                # Dedup properties to verify we don't process conflicting data in the same batch
+                if not properties.empty and 'property_url' in properties.columns:
+                     properties.drop_duplicates(subset=['property_url'], keep='first', inplace=True)
                 
                 for _, prop in properties.iterrows():
                     try:

@@ -97,6 +97,13 @@ def get_properties():
             statement = select(PropertyListing)
             results = session.exec(statement).all()
             
+            # Fetch history mapping
+            from app.models import PropertyChangeLog
+            from sqlalchemy import func
+            history_stmt = select(PropertyChangeLog.property_id, func.max(PropertyChangeLog.timestamp)).group_by(PropertyChangeLog.property_id)
+            history_results = session.exec(history_stmt).all()
+            history_map = {str(row[0]): row[1] for row in history_results}
+            
             properties = []
             for prop in results:
                 # Convert GeoAlchemy element to Shapely point then to lat/lon
@@ -113,12 +120,35 @@ def get_properties():
                     "property_url": prop.property_url,
                     "gis_tier": prop.gis_tier,
                     "gis_contour": prop.gis_contour,
+                    "gis_tier": prop.gis_tier,
+                    "gis_contour": prop.gis_contour,
                     "lat": point.y,
-                    "lon": point.x
+                    "lon": point.x,
+                    "created_at": prop.created_at,
+                    "latest_change": history_map.get(str(prop.id))
                 })
             return properties
     except Exception as e:
         logger.error(f"Error fetching properties: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/properties/{property_id}/history")
+def get_property_history(property_id: str):
+    """
+    Get change history for a specific property.
+    """
+    try:
+        with Session(engine) as session:
+            from app.models import PropertyChangeLog
+            from uuid import UUID
+            
+            # Sort by timestamp descending (newest first)
+            statement = select(PropertyChangeLog).where(PropertyChangeLog.property_id == UUID(property_id)).order_by(PropertyChangeLog.timestamp.desc())
+            history = session.exec(statement).all()
+            
+            return history
+    except Exception as e:
+        logger.error(f"Error fetching history: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/zones")
