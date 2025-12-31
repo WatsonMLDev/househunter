@@ -1,8 +1,9 @@
 from datetime import datetime
-from typing import Optional, Any
+from typing import Optional, Any, Dict
 from uuid import UUID, uuid4
 from sqlmodel import SQLModel, Field
 from sqlalchemy import Column
+from sqlalchemy.dialects.postgresql import JSONB
 from geoalchemy2 import Geometry
 
 class HunterBase(SQLModel):
@@ -42,6 +43,7 @@ class PropertyListing(HunterBase, table=True):
     price_tier: Optional[str] = None
     gis_tier: Optional[str] = None
     gis_contour: Optional[int] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
 
@@ -51,3 +53,12 @@ class PropertyListing(HunterBase, table=True):
 
     class Config:
         arbitrary_types_allowed = True
+
+class PropertyChangeLog(HunterBase, table=True):
+    __tablename__ = "property_change_log"
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    property_id: UUID = Field(foreign_key="property_listings.id")
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    changes: Dict[str, Any] = Field(sa_column=Column(JSONB))
+

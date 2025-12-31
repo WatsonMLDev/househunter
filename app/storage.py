@@ -1,5 +1,5 @@
 from sqlmodel import Session, select
-from app.models import PropertyListing
+from app.models import PropertyListing, PropertyChangeLog
 from geoalchemy2.shape import from_shape
 from shapely.geometry import Point
 from typing import Dict, Any, List
@@ -18,14 +18,39 @@ class PropertyStorage:
         is_new = False
         if existing:
             # Update
-            existing.price = data['price']
-            existing.status = data['status']
-            existing.price_tier = data['price_tier']
+            # Update
+            changes = {}
+            
+            # Check price
+            if existing.price != data['price']:
+                changes['price'] = {'old': existing.price, 'new': data['price']}
+                existing.price = data['price']
+                
+            # Check status
+            if existing.status != data['status']:
+                changes['status'] = {'old': existing.status, 'new': data['status']}
+                existing.status = data['status']
+                
+            # Check other fields if needed, for now focusing on key value drivers
+            if existing.price_tier != data['price_tier']:
+                # pricing tier changed
+                changes['price_tier'] = {'old': existing.price_tier, 'new': data['price_tier']}
+                existing.price_tier = data['price_tier']
+                
             existing.gis_tier = data['gis_tier']
             existing.gis_contour = data['gis_contour']
             existing.beds = data['beds']
             existing.baths = data['baths']
             existing.sqft = data['sqft']
+            
+            if changes:
+                # Log changes
+                change_log = PropertyChangeLog(
+                    property_id=existing.id,
+                    changes=changes
+                )
+                session.add(change_log)
+                
             session.add(existing)
         else:
             # Create
