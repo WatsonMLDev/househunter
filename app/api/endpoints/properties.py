@@ -47,6 +47,7 @@ def get_properties(session: Session = Depends(get_session)):
                 "gis_contour": prop.gis_contour,
                 "lat": point.y,
                 "lon": point.x,
+                "primary_image_url": prop.primary_image_url,
                 "created_at": prop.created_at,
                 "latest_change": history_map.get(str(prop.id))
             })

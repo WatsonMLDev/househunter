@@ -4,9 +4,13 @@ from typing import Optional, Dict, Any
 class PropertyProcessor:
     @staticmethod
     def get_safe(val: Any, cast_type=None) -> Any:
-        if pd.isna(val) or val is None:
-            return None
         try:
+             # Handle list types explicitly first to avoid numpy/pandas ambiguity
+            if isinstance(val, list):
+                return val
+            
+            if pd.isna(val) or val is None:
+                return None
             return cast_type(val) if cast_type else val
         except:
             return None
@@ -54,5 +58,7 @@ class PropertyProcessor:
             'status': str(prop.get('status', 'unknown')),
             'mls': str(prop.get('mls')) if not pd.isna(prop.get('mls')) else None,
             'address': prop.get('formatted_address', f"{prop.get('street', '')}, {prop.get('city', '')}, {prop.get('state', '')}"),
-            'price_tier': cls.calculate_price_tier(price)
+            'price_tier': cls.calculate_price_tier(price),
+            'primary_image_url': cls.get_safe(prop.get('primary_photo'), str),
+            'alt_images': cls.get_safe(prop.get('alt_photos')) # Expecting list or None, let Storage handle or just save
         }
