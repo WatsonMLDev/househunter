@@ -1,5 +1,5 @@
 from sqlmodel import Session, select
-from app.models import PropertyListing, PropertyChangeLog
+from app.core.models import PropertyListing, PropertyChangeLog
 from geoalchemy2.shape import from_shape
 from shapely.geometry import Point
 from typing import Dict, Any, List

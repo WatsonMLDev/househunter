@@ -7,7 +7,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from sqlmodel import Session, select, text
 from app.database import engine, init_db
-from app.models import PropertyListing, PropertyChangeLog
+from app.core.models import PropertyListing, PropertyChangeLog
 from app.storage import PropertyStorage
 
 def test_history_flow():

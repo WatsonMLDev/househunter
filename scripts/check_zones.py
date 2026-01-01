@@ -6,7 +6,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from app.database import engine
-from app.models import HunterZone
+from app.core.models import HunterZone
 
 def check_zones():
     with Session(engine) as session:

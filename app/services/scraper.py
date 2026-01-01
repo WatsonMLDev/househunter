@@ -6,11 +6,11 @@ from sqlmodel import Session
 import time
 import random
 
-from app.database import engine
-from app.zillow_scraper import ZillowScraper
-from app.property_processor import PropertyProcessor
-from app.gis import GISService
-from app.storage import PropertyStorage
+from app.core.database import engine
+from app.services.zillow_scraper import ZillowScraper
+from app.services.property_processor import PropertyProcessor
+from app.services.gis import GISService
+from app.services.storage import PropertyStorage
 
 # Setup logger
 logging.basicConfig(level=logging.INFO)
