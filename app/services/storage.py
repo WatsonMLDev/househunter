@@ -43,6 +43,10 @@ class PropertyStorage:
             existing.baths = data['baths']
             existing.sqft = data['sqft']
             
+            # Update images
+            existing.primary_image_url = data.get('primary_image_url')
+            existing.alt_images = data.get('alt_images')
+            
             if changes:
                 # Log changes
                 change_log = PropertyChangeLog(
@@ -65,6 +69,8 @@ class PropertyStorage:
                 sqft=data['sqft'],
                 year_built=data['year_built'],
                 property_url=str(prop_url),
+                primary_image_url=data.get('primary_image_url'),
+                alt_images=data.get('alt_images'),
                 mls=data['mls'],
                 price_tier=data['price_tier'],
                 gis_tier=data['gis_tier'],

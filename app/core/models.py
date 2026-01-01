@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional, Any, Dict
+from typing import Optional, Any, Dict, List
 from uuid import UUID, uuid4
 from sqlmodel import SQLModel, Field
 from sqlalchemy import Column
@@ -39,6 +39,8 @@ class PropertyListing(HunterBase, table=True):
     sqft: Optional[int] = None
     year_built: Optional[int] = None
     property_url: Optional[str] = None
+    primary_image_url: Optional[str] = None
+    alt_images: Optional[List[str]] = Field(default=None, sa_column=Column(JSONB))
     mls: Optional[str] = None
     price_tier: Optional[str] = None
     gis_tier: Optional[str] = None
