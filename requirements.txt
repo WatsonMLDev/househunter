@@ -7,3 +7,5 @@ shapely
 python_dotenv
 homeharvest
 apscheduler
+pyyaml
+python-multipart

@@ -1,0 +1,51 @@
+locations:
+  - "Amherst County, VA"
+  - "Nelson County, VA"
+  - "Charlottesville city, VA"
+  - "Powhatan County, VA"
+  - "Lexington city, VA"
+  - "Highland County, VA"
+  - "Rockbridge County, VA"
+  - "Lynchburg city, VA"
+  - "Augusta County, VA"
+  - "Buckingham County, VA"
+  - "Harrisonburg city, VA"
+  - "Shenandoah County, VA"
+  - "Page County, VA"
+  - "Rockingham County, VA"
+  - "Albemarle County, VA"
+  - "Madison County, VA"
+  - "Orange County, VA"
+  - "Louisa County, VA"
+  - "Henrico County, VA"
+  - "Fauquier County, VA"
+  - "Cumberland County, VA"
+  - "Fluvanna County, VA"
+  - "Culpeper County, VA"
+  - "Spotsylvania County, VA"
+  - "Appomattox County, VA"
+  - "Greene County, VA"
+  - "Rappahannock County, VA"
+  - "Chesterfield County, VA"
+  - "Waynesboro city, VA"
+  - "Campbell County, VA"
+  - "Richmond city, VA"
+  - "Hanover County, VA"
+  - "Buena Vista city, VA"
+  - "Staunton city, VA"
+  - "Prince Edward County, VA"
+  - "Goochland County, VA"
+
+scheduler:
+  interval_hours: 3
+
+scraper:
+  default_past_days: 30
+  listing_types: 
+    - "for_sale"
+
+zones:
+  tiers:
+    gold: 40
+    silver: 60
+    bronze: 75

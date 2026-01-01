@@ -5,7 +5,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.database import engine, init_db
-from app.models import PropertyListing
+from app.core.models import PropertyListing
 from app.scraper import scrape_and_store_properties
 from sqlmodel import Session, select
 
