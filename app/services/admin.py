@@ -1,6 +1,7 @@
 import json
 import logging
-from typing import List, Dict, Any
+import requests
+from typing import List, Dict, Any, Optional
 from sqlmodel import Session, select, text
 from shapely.geometry import shape
 from geoalchemy2.shape import from_shape, to_shape
@@ -129,3 +130,110 @@ class AdminService:
         count = len(zones_to_insert)
         logger.info(f"Done. Inserted {count} zones.")
         return count
+
+    @staticmethod
+    def generate_zones_from_valhalla(
+        session: Session,
+        lat: float,
+        lon: float,
+        contours: List[int], # e.g. [15, 30, 45]
+        valhalla_url: str = "https://valhalla1.openstreetmap.de/isochrone",
+        costing: str = "auto"
+    ) -> int:
+        """
+        Calls Valhalla Isochrone API, parses response, seeds zones, and triggers backfill.
+        """
+        logger.info(f"Requests Valhalla Isochrones at {lat}, {lon} with contours {contours}")
+
+        # 1. Prepare Request
+        # Valhalla expects contours in minutes
+        contest_list = [{"time": c} for c in contours]
+        
+        payload = {
+            "locations": [{"lat": lat, "lon": lon}],
+            "costing": costing,
+            "contours": contest_list,
+            "polygons": True
+        }
+
+        try:
+            # 2. Call API
+            resp = requests.post(valhalla_url, json=payload, timeout=30)
+            resp.raise_for_status()
+            data = resp.json()
+            
+            # 3. Seed Zones (Reuse logic)
+            # note: Valhalla returns a FeatureCollection. 
+            # We need to map the 'contour' (minutes) to our 'tier' logic.
+            # However, our seed_zones_from_geojson logic relies on AppConfig for tiers.
+            # To support dynamic custom contours effectively, we might need to override 
+            # or ensure the seed logic respects the order.
+            
+            # The seed_zones_from_geojson logic uses hardcoded config check. 
+            # Let's do a refined insertion here specifically for this generation flow
+            # to ensure strict mapping: Smallest = Gold, Middle = Silver, Largest = Bronze.
+            
+            # Sort contours to be sure
+            contours.sort()
+            
+            # Mapping logic:
+            # contours[0] -> Gold
+            # contours[1] -> Silver
+            # contours[2] -> Bronze
+            # Any others -> Bronze or ignore? User said 3 tiers + Zinc (fallback).
+            # We assume the user sends exactly 3 contours for the 3 tiers.
+            
+            tier_map = {}
+            if len(contours) >= 1: tier_map[contours[0]] = 'gold'
+            if len(contours) >= 2: tier_map[contours[1]] = 'silver'
+            if len(contours) >= 3: tier_map[contours[2]] = 'bronze'
+            
+            features = data.get('features', [])
+            zones_to_insert = []
+            
+            for feature in features:
+                props = feature.get('properties', {})
+                contour_val = props.get('contour')
+                if contour_val is None: 
+                    continue
+                
+                contour_int = int(contour_val)
+                tier = tier_map.get(contour_int)
+                
+                if not tier:
+                    # Fallback if valhalla returns slightly different float or something
+                    # Find closest? For now exact match or skip.
+                    logger.warning(f"Contour {contour_int} not in map {tier_map}. Skipping.")
+                    continue
+                    
+                geom_shape = shape(feature['geometry'])
+                geom_wkb = from_shape(geom_shape, srid=4326)
+                
+                zone = HunterZone(
+                    tier=tier,
+                    contour=contour_int,
+                    geom=geom_wkb
+                )
+                zones_to_insert.append(zone)
+            
+            if not zones_to_insert:
+                logger.error("No valid zones parsed from Valhalla response.")
+                return 0
+
+            # Truncate and Insert
+            session.exec(text("TRUNCATE TABLE hunter_zones CASCADE;"))
+            session.add_all(zones_to_insert)
+            session.commit()
+            
+            count = len(zones_to_insert)
+            logger.info(f"Generated and inserted {count} zones from Valhalla.")
+            
+            # 4. Trigger Backfill
+            logger.info("Triggering GIS Backfill after new zones...")
+            AdminService.backfill_gis_data(session)
+            
+            return count
+
+        except Exception as e:
+            logger.error(f"Valhalla generation failed: {e}")
+            raise e
