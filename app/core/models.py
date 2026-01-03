@@ -64,3 +64,40 @@ class PropertyChangeLog(HunterBase, table=True):
     timestamp: datetime = Field(default_factory=datetime.utcnow)
     changes: Dict[str, Any] = Field(sa_column=Column(JSONB))
 
+
+class User(HunterBase, table=True):
+    __tablename__ = "users"
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    account_id: str = Field(unique=True, index=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+class UserInteraction(HunterBase, table=True):
+    __tablename__ = "user_interactions"
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    user_id: UUID = Field(foreign_key="users.id", index=True)
+    property_id: UUID = Field(foreign_key="property_listings.id", index=True)
+    
+    is_favorite: bool = Field(default=False)
+    is_rejected: bool = Field(default=False)
+    is_undecided: bool = Field(default=False)
+    is_viewed: bool = Field(default=False)
+    
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+class UserSettings(HunterBase, table=True):
+    __tablename__ = "user_settings"
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    user_id: UUID = Field(foreign_key="users.id", unique=True)
+    
+    # JSON Configs
+    scrape_locations: Optional[List[str]] = Field(default=None, sa_column=Column(JSONB))
+    listing_types: Optional[List[str]] = Field(default=None, sa_column=Column(JSONB))
+    
+    max_scrape_price: int = Field(default=350000)
+    
+    price_tiers: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column(JSONB))
+    isochrone_settings: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column(JSONB))
+
