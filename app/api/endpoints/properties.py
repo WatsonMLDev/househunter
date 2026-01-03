@@ -6,7 +6,8 @@ from sqlalchemy import func
 from geoalchemy2.shape import to_shape
 
 from app.core.database import engine
-from app.core.models import PropertyListing, PropertyChangeLog
+from app.core.models import PropertyListing, PropertyChangeLog, User
+from app.api.deps import get_session, get_current_user
 
 router = APIRouter()
 
@@ -15,7 +16,10 @@ def get_session():
         yield session
 
 @router.get("/", response_model=List[Any])
-def get_properties(session: Session = Depends(get_session)):
+def get_properties(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
     """
     Get all active properties with their GIS info.
     """
@@ -56,7 +60,11 @@ def get_properties(session: Session = Depends(get_session)):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/{property_id}/history")
-def get_property_history(property_id: str, session: Session = Depends(get_session)):
+def get_property_history(
+    property_id: str, 
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
     """
     Get change history for a specific property.
     """
