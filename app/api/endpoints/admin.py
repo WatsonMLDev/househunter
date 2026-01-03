@@ -7,6 +7,8 @@ from typing import List, Optional
 from app.core.database import engine
 from app.services.scraper import scrape_and_store_properties
 from app.services.admin import AdminService
+from app.api.deps import get_current_user
+from app.core.models import User
 
 class IsochroneRequest(BaseModel):
     lat: float
@@ -22,10 +24,12 @@ def get_session():
         yield session
 
 @router.post("/populate")
-def populate_db(background_tasks: BackgroundTasks):
+def populate_db(
+    current_user: User = Depends(get_current_user)
+):
     """
     Trigger the scraper to populate the database.
-    Running in background to avoid timeout.
+    Running synchronously to allow UI to show loading state.
     """
     from app.core.config import AppConfig
     
@@ -34,11 +38,16 @@ def populate_db(background_tasks: BackgroundTasks):
     listing_types = scraper_settings.get("listing_types", ["for_sale"])
     past_days = scraper_settings.get("default_past_days", 30)
     
-    background_tasks.add_task(scrape_and_store_properties, locations=locations, listing_type=listing_types, past_days=past_days)
-    return {"message": "Scraper job started in background.", "locations_count": len(locations)}
+    # Synchronous call
+    scrape_and_store_properties(locations=locations, listing_type=listing_types, past_days=past_days)
+    
+    return {"message": "Scraper job completed.", "locations_count": len(locations)}
 
 @router.post("/backfill-gis")
-def backfill_gis(background_tasks: BackgroundTasks):
+def backfill_gis(
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user)
+):
     """
     Trigger backfill of GIS data for all properties.
     """
@@ -50,7 +59,10 @@ def backfill_gis(background_tasks: BackgroundTasks):
     return {"message": "GIS Backfill started in background."}
 
 @router.post("/seed-zones")
-async def seed_zones(file: UploadFile = File(...)):
+async def seed_zones(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user)
+):
     """
     Seed Hunter Zones from an uploaded GeoJSON file.
     """
@@ -66,7 +78,11 @@ async def seed_zones(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/generate-zones")
-def generate_zones(request: IsochroneRequest, background_tasks: BackgroundTasks):
+def generate_zones(
+    request: IsochroneRequest, 
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user)
+):
     """
     Generate zones using Valhalla and update the database.
     Runs in background as it involves external API call and DB backfill.
