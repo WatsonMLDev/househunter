@@ -37,7 +37,7 @@ locations:
   - "Goochland County, VA"
 
 scheduler:
-  interval_hours: 3
+  interval_hours: 12
 
 scraper:
   default_past_days: 30
