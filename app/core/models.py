@@ -16,7 +16,7 @@ class HunterZone(HunterBase, table=True):
     tier: str  # 'gold', 'silver', 'bronze'
     contour: int # minutes
     created_at: datetime = Field(default_factory=datetime.utcnow)
-    
+    user_id: Optional[UUID] = Field(foreign_key="users.id", index=True)
     # Critical: GeoAlchemy2 Geometry
     geom: Any = Field(sa_column=Column(Geometry("POLYGON", srid=4326)))
 
