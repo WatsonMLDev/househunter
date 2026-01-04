@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "8001:8000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@db:5432/househunter
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - .:/app
+
+  frontend:
+    build:
+      context: ../househunter-frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=http://localhost:8001
+    ports:
+      - "3001:80"
+    depends_on:
+      - app
+
+  db:
+    image: postgis/postgis:15-3.3
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: househunter
+    ports:
+      - "5433:5432"
+    volumes:
+      - hunter_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d househunter"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  adminer:
+    image: adminer:4
+    restart: always
+    ports:
+      - "8080:8080"
+
+volumes:
+  hunter_postgres_data:

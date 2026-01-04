@@ -3,3 +3,4 @@ scraping_research
 __pycache__/
 *.py[cod]
 *$py.class
+docker-compose.yml
